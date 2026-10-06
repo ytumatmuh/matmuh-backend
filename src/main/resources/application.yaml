@@ -133,3 +133,8 @@ upload:
 preview:
   converter-url: ${PREVIEW_CONVERTER_URL:}
   timeout-seconds: ${PREVIEW_TIMEOUT_SECONDS:30}
+
+# The frontend route that marks cached collections stale after a write (inscribed/revalidate). Blank turns it off.
+revalidation:
+  url: ${REVALIDATION_URL:}
+  secret: ${REVALIDATION_SECRET:}
