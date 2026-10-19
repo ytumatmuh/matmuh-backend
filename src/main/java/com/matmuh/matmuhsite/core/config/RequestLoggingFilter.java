@@ -1,5 +1,6 @@
 package com.matmuh.matmuhsite.core.config;
 
+import com.matmuh.matmuhsite.core.helpers.LogMasks;
 import com.matmuh.matmuhsite.entities.User;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -68,11 +69,10 @@ public class RequestLoggingFilter extends OncePerRequestFilter {
 
         try {
             var message = "{} {}{} -> {} ({} ms) user={}";
-            var query = request.getQueryString();
             var arguments = new Object[]{
                     request.getMethod(),
                     request.getRequestURI(),
-                    query == null ? "" : "?" + query,
+                    LogMasks.queryNames(request.getQueryString()),
                     status,
                     durationMillis,
                     userId == null ? "anonymous" : userId

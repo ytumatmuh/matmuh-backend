@@ -86,7 +86,7 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
             return;
         }
         if (email == null || !email.endsWith("@std.yildiz.edu.tr")) {
-            logger.warn("Öğrenci olmayan e-posta ile giriş denemesi: {}", email);
+            logger.warn("Öğrenci olmayan e-posta ile giriş denemesi: {}", LogMasks.email(email));
             redirectWithError(request, response, "email");
             return;
         }

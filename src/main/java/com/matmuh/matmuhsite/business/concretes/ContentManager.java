@@ -13,6 +13,7 @@ import com.matmuh.matmuhsite.core.exceptions.CmsValidationException;
 import com.matmuh.matmuhsite.core.exceptions.ConcurrencyConflictException;
 import com.matmuh.matmuhsite.core.helpers.CmsLocaleResolver;
 import com.matmuh.matmuhsite.core.helpers.FileUrlRule;
+import com.matmuh.matmuhsite.core.helpers.LogMasks;
 import com.matmuh.matmuhsite.core.helpers.SlugNormalizer;
 import com.matmuh.matmuhsite.dataAccess.abstracts.cms.ContentBlockDao;
 import com.matmuh.matmuhsite.dataAccess.abstracts.cms.ContentDraftDao;
@@ -73,7 +74,7 @@ public class ContentManager implements ContentService {
     public ContentResponseDto getBySlugForEditor(String userId, String slug, String locale) {
         var normalizedSlug = SlugNormalizer.normalizeSlug(slug);
         var resolved = localeResolver.resolveForRead(locale);
-        logger.debug("Fetching editor content for slug: {} locale: {} user: {}", normalizedSlug, resolved, userId);
+        logger.debug("Fetching editor content for slug: {} locale: {} user: {}", normalizedSlug, resolved, LogMasks.principal(userId));
 
         var blocks = contentBlockDao.findPublished(normalizedSlug, resolved);
         var blockDtos = toBlockDtos(blocks);
@@ -100,7 +101,7 @@ public class ContentManager implements ContentService {
     @Transactional(readOnly = true)
     public ContentBundleDto getAllForEditor(String userId, String locale) {
         var resolved = localeResolver.resolveForRead(locale);
-        logger.debug("Fetching editor content bundle for locale: {} user: {}", resolved, userId);
+        logger.debug("Fetching editor content bundle for locale: {} user: {}", resolved, LogMasks.principal(userId));
 
         var draftsBySlug = contentDraftDao.findAllOwn(userId, resolved).stream()
                 .collect(Collectors.toMap(ContentDraft::getSlug, draft -> parseDraftPayload(draft.getPayload())));
@@ -147,7 +148,7 @@ public class ContentManager implements ContentService {
         var normalizedSlug = SlugNormalizer.normalizeSlug(request.getSlug());
         var resolved = localeResolver.requireForWrite(locale);
         logger.info("Publishing {} block(s) for slug: {} by user: {}",
-                request.getBlocks().size(), normalizedSlug, userId);
+                request.getBlocks().size(), normalizedSlug, LogMasks.principal(userId));
 
         var paths = request.getBlocks().stream()
                 .map(update -> SlugNormalizer.normalizeBlockPath(update.getBlockPath()))
@@ -221,7 +222,7 @@ public class ContentManager implements ContentService {
     public void saveDraft(String userId, UpdatePageRequestDto request, String locale) {
         var normalizedSlug = SlugNormalizer.normalizeSlug(request.getSlug());
         var resolved = localeResolver.requireForWrite(locale);
-        logger.info("Saving draft for slug: {} locale: {} user: {}", normalizedSlug, resolved, userId);
+        logger.info("Saving draft for slug: {} locale: {} user: {}", normalizedSlug, resolved, LogMasks.principal(userId));
 
         var draft = contentDraftDao.findOwn(normalizedSlug, userId, resolved)
                 .orElseGet(() -> ContentDraft.builder()
@@ -262,7 +263,7 @@ public class ContentManager implements ContentService {
     public void deleteDraft(String userId, String slug, String locale) {
         var normalizedSlug = SlugNormalizer.normalizeSlug(slug);
         var resolved = localeResolver.requireForWrite(locale);
-        logger.info("Deleting draft for slug: {} locale: {} user: {}", normalizedSlug, resolved, userId);
+        logger.info("Deleting draft for slug: {} locale: {} user: {}", normalizedSlug, resolved, LogMasks.principal(userId));
 
         contentDraftDao.deleteOwn(normalizedSlug, userId, resolved);
     }

@@ -2,6 +2,7 @@ package com.matmuh.matmuhsite.core.security;
 
 import com.matmuh.matmuhsite.business.abstracts.UserService;
 import com.matmuh.matmuhsite.core.helpers.AuthCookieFactory;
+import com.matmuh.matmuhsite.core.helpers.LogMasks;
 import com.matmuh.matmuhsite.core.helpers.OriginValidator;
 import com.matmuh.matmuhsite.core.helpers.ServiceKeyFormat;
 import com.matmuh.matmuhsite.core.properties.CookieProperties;
@@ -63,7 +64,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         if (token != null) {
             try {
                 username = jwtService.extractUser(token);
-                logger.debug("Extracted username from token: {}", username);
+                logger.debug("Extracted username from token: {}", LogMasks.email(username));
             } catch (Exception e) {
                 logger.warn("Token parse hatası: {}", e.getMessage());
             }
@@ -77,9 +78,9 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                         new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
                 authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(authToken);
-                logger.debug("Authentication set for: {}", username);
+                logger.debug("Authentication set for: {}", LogMasks.email(username));
             } else {
-                logger.warn("Token geçersiz: {}", username);
+                logger.warn("Token geçersiz: {}", LogMasks.email(username));
             }
         }
 

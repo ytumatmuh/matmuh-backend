@@ -77,7 +77,7 @@ public class SearchManager implements SearchService {
             return result;
         }
 
-        log.info("Global search query={} types={} limit={}", normalized, types, limit);
+        log.debug("Global search length={} types={} limit={}", normalized.length(), types, limit);
 
         var wanted = types == null || types.isEmpty() ? Set.of(SearchResultType.values()) : types;
         var resolvedLocale = localeResolver.resolveForRead(locale);
