@@ -3,8 +3,10 @@ package com.matmuh.matmuhsite.business.concretes;
 import com.matmuh.matmuhsite.business.abstracts.CmsMediaService;
 import com.matmuh.matmuhsite.business.constants.FileMessages;
 import com.matmuh.matmuhsite.core.dtos.cms.response.UploadResponseDto;
+import com.matmuh.matmuhsite.core.exceptions.BusinessRuleException;
 import com.matmuh.matmuhsite.core.helpers.StorageUrlResolver;
 import com.matmuh.matmuhsite.core.helpers.UploadValidator;
+import com.matmuh.matmuhsite.core.properties.StudentPortalProperties;
 import com.matmuh.matmuhsite.core.utilities.preview.DocumentPreviewService;
 import com.matmuh.matmuhsite.core.utilities.storage.FolderType;
 import com.matmuh.matmuhsite.core.utilities.storage.StorageService;
@@ -33,19 +35,22 @@ public class CmsMediaManager implements CmsMediaService {
     private final DocumentPreviewService documentPreviewService;
     private final FileDao fileDao;
     private final ImageDao imageDao;
+    private final StudentPortalProperties studentPortal;
 
     public CmsMediaManager(StorageService storageService,
                            StorageUrlResolver storageUrlResolver,
                            UploadValidator uploadValidator,
                            DocumentPreviewService documentPreviewService,
                            FileDao fileDao,
-                           ImageDao imageDao) {
+                           ImageDao imageDao,
+                           StudentPortalProperties studentPortal) {
         this.storageService = storageService;
         this.storageUrlResolver = storageUrlResolver;
         this.uploadValidator = uploadValidator;
         this.documentPreviewService = documentPreviewService;
         this.fileDao = fileDao;
         this.imageDao = imageDao;
+        this.studentPortal = studentPortal;
     }
 
     @Override
@@ -87,6 +92,14 @@ public class CmsMediaManager implements CmsMediaService {
         if (uploadValidator.isAllowed(file, FolderType.IMAGE)) {
             return FolderType.IMAGE;
         }
-        return publicAccess ? FolderType.PUBLIC_FILE : FolderType.FILE;
+        if (publicAccess) {
+            return FolderType.PUBLIC_FILE;
+        }
+        // Öğrenci girişi kapalı sitede files/'ı yalnız yöneticiler açabilir; ziyaretçiye
+        // görünmeyecek bir eki sessizce kabul etmek yerine reddediyoruz.
+        if (!studentPortal.isEnabled()) {
+            throw new BusinessRuleException(FileMessages.PRIVATE_ATTACHMENT_NOT_SUPPORTED);
+        }
+        return FolderType.FILE;
     }
 }

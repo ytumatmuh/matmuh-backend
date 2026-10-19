@@ -125,6 +125,10 @@ app:
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:5500}
 
+features:
+  student-portal:
+    enabled: ${STUDENT_PORTAL_ENABLED:false}
+
 upload:
   max-file-size-mb: ${UPLOAD_MAX_FILE_SIZE_MB:25}
   max-image-size-mb: ${UPLOAD_MAX_IMAGE_SIZE_MB:10}
