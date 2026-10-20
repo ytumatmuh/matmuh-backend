@@ -187,9 +187,8 @@ public class SecurityConfig {
                 .anyRequest().denyAll();
     }
 
-    // Öğrenci yüzeyi: kayıt, kişisel takvim, not yükleme/listeleme, dönem kayıtları ve not
-    // istatistikleri, files/ indirmeleri. Bu kurallar genel kurallardan önce kaydedilir, çünkü
-    // aynı yolların geniş eşleşmeleri (GET /api/lectures/** vb.) aşağıda permitAll.
+    // Genel kurallardan önce kaydedilmeli: aynı yolların geniş eşleşmeleri (GET /api/lectures/**,
+    // GET /api/staff/**) sonradan permitAll.
     private void studentSurface(AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizationManagerRequestMatcherRegistry x) {
         if (studentPortal.isEnabled()) {
             x
@@ -210,9 +209,8 @@ public class SecurityConfig {
             return;
         }
 
-        // Resmi site: öğrenci girişi yok. Uçlar ve veri duruyor; ADMIN deneyebilsin diye denyAll
-        // değil. Not/kayıt uçları ADMIN, dönem verisini bakımı yapan EDITOR da okur; files/
-        // ders notları ve eski giriş isteyen CMS ekleri.
+        // Özellik geri gelebilir: ADMIN deneyebilsin diye denyAll değil. Dönem verisinin bakımını
+        // EDITOR yaptığı için o okumalar ona da açık.
         x
                 .requestMatchers(HttpMethod.GET, "/api/uploads/files/**").hasAnyRole("ADMIN", "EDITOR")
                 .requestMatchers(HttpMethod.GET, "/api/calendar/me").hasRole("ADMIN")

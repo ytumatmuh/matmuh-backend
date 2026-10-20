@@ -13,5 +13,5 @@ import org.springframework.context.annotation.Configuration;
 @Setter
 public class StudentPortalProperties {
 
-    private boolean enabled = false;
+    private boolean enabled;
 }

@@ -1,6 +1,7 @@
 package com.matmuh.matmuhsite.core.config;
 
 import com.matmuh.matmuhsite.core.security.JwtService;
+import com.matmuh.matmuhsite.core.utilities.results.ErrorCodes;
 import com.matmuh.matmuhsite.dataAccess.abstracts.UserDao;
 import com.matmuh.matmuhsite.entities.Role;
 import com.matmuh.matmuhsite.entities.User;
@@ -15,6 +16,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.MessageSource;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
@@ -120,11 +122,15 @@ class StudentSurfaceAccessTest {
             return jwtService.generateToken(user);
         }
 
-        int statusOf(AbstractMockHttpServletRequestBuilder<?> request, String token) throws Exception {
+        MockHttpServletResponse responseOf(AbstractMockHttpServletRequestBuilder<?> request, String token) throws Exception {
             if (token != null) {
                 request.header("Authorization", "Bearer " + token);
             }
-            return mvc.perform(request).andReturn().getResponse().getStatus();
+            return mvc.perform(request).andReturn().getResponse();
+        }
+
+        int statusOf(AbstractMockHttpServletRequestBuilder<?> request, String token) throws Exception {
+            return responseOf(request, token).getStatus();
         }
 
         void assertPasses(Endpoint endpoint, String token, String who) throws Exception {
@@ -132,14 +138,21 @@ class StudentSurfaceAccessTest {
             assertTrue(status != 401 && status != 403, who + " was refused " + endpoint.name() + " with " + status);
         }
 
-        void assertStatus(int expected, Endpoint endpoint, String token, String who) throws Exception {
-            assertEquals(expected, statusOf(endpoint.request().get(), token), who + " on " + endpoint.name());
+        // Çıplak 403 yetmez: iş katmanının PermissionDeniedException'ı da 403 döner ama
+        // PERMISSION_DENIED yazar. ACCESS_DENIED / AUTHENTICATION_REQUIRED'ı yalnız güvenlik
+        // zincirinin işleyicileri (CustomAccessDeniedHandler, CustomAuthenticationEntryPointHandler) yazar.
+        void assertRefusedBySecurity(int expected, Endpoint endpoint, String token, String who) throws Exception {
+            var response = responseOf(endpoint.request().get(), token);
+            var where = who + " on " + endpoint.name();
+            assertEquals(expected, response.getStatus(), where);
+            var errorCode = new ObjectMapper().readTree(response.getContentAsString()).path("errorCode").asText();
+            assertEquals(expected == 401 ? ErrorCodes.AUTHENTICATION_REQUIRED : ErrorCodes.ACCESS_DENIED, errorCode, where);
         }
 
         @Test
         void anonymousMustSignIn() throws Exception {
             for (var endpoint : STUDENT_SURFACE) {
-                assertStatus(401, endpoint, null, "anonymous");
+                assertRefusedBySecurity(401, endpoint, null, "anonymous");
             }
         }
 
@@ -160,7 +173,7 @@ class StudentSurfaceAccessTest {
         @Test
         void studentIsRefusedTheWholeStudentSurface() throws Exception {
             for (var endpoint : STUDENT_SURFACE) {
-                assertStatus(403, endpoint, student, "USER");
+                assertRefusedBySecurity(403, endpoint, student, "USER");
             }
         }
 
@@ -170,7 +183,7 @@ class StudentSurfaceAccessTest {
                 if (endpoint.editorReadable()) {
                     assertPasses(endpoint, editor, "EDITOR");
                 } else {
-                    assertStatus(403, endpoint, editor, "EDITOR");
+                    assertRefusedBySecurity(403, endpoint, editor, "EDITOR");
                 }
             }
         }
