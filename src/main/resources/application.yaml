@@ -129,6 +129,13 @@ features:
   student-portal:
     enabled: ${STUDENT_PORTAL_ENABLED:false}
 
+bootstrap:
+  admin:
+    email: ${BOOTSTRAP_ADMIN_EMAIL:}
+    password: ${BOOTSTRAP_ADMIN_PASSWORD:}
+    first-name: ${BOOTSTRAP_ADMIN_FIRST_NAME:}
+    last-name: ${BOOTSTRAP_ADMIN_LAST_NAME:}
+
 upload:
   max-file-size-mb: ${UPLOAD_MAX_FILE_SIZE_MB:25}
   max-image-size-mb: ${UPLOAD_MAX_IMAGE_SIZE_MB:10}

@@ -11,6 +11,8 @@ jobs:
   backend-build:
     runs-on: ubuntu-latest
     permissions: { contents: read, packages: write }
+    env:
+      OFFICIAL_DEPLOY_WEBHOOK: ${{ secrets.DOKPLOY_OFFICIAL_BACKEND_WEBHOOK }}
     steps:
       - uses: actions/checkout@v4
 
@@ -41,3 +43,7 @@ jobs:
 
       - name: Trigger Dokploy deploy
         run: curl -fsSL -X POST "${{ secrets.DOKPLOY_DEPLOY_WEBHOOK }}"
+
+      - name: Trigger Dokploy deploy (official site)
+        if: env.OFFICIAL_DEPLOY_WEBHOOK != ''
+        run: curl -fsSL -X POST "$OFFICIAL_DEPLOY_WEBHOOK"
