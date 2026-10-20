@@ -9,6 +9,7 @@ import com.matmuh.matmuhsite.business.constants.CollectionRegistry;
 import com.matmuh.matmuhsite.core.helpers.CollectionFilterParser;
 import com.matmuh.matmuhsite.core.helpers.CollectionSchemaValidator;
 import com.matmuh.matmuhsite.core.helpers.CmsLocaleResolver;
+import com.matmuh.matmuhsite.core.helpers.LogMasks;
 import com.matmuh.matmuhsite.core.helpers.FilePreviewEnricher;
 import com.matmuh.matmuhsite.core.helpers.CollectionSortParser;
 import com.matmuh.matmuhsite.core.helpers.SlugGenerator;
@@ -229,7 +230,7 @@ public class CmsCollectionManager implements CmsCollectionService {
 
         var item = requireOwnItem(collectionKey, slug);
 
-        logger.info("Archiving collection item {}/{} by {}", item.getCollectionKey(), item.getSlug(), updatedBy);
+        logger.info("Archiving collection item {}/{} by {}", item.getCollectionKey(), item.getSlug(), LogMasks.principal(updatedBy));
 
         if (version == null) {
             throw new CmsValidationException(CmsMessages.VERSION_REQUIRED_FOR_EXISTING + item.getCollectionKey() + "/" + item.getSlug());
@@ -262,7 +263,7 @@ public class CmsCollectionManager implements CmsCollectionService {
             throw new CmsValidationException(CmsMessages.VERSION_REQUIRED_FOR_EXISTING + key + "/" + normalizedSlug);
         }
 
-        logger.info("Deleting provider-backed collection item {}/{} by {}", key, normalizedSlug, deletedBy);
+        logger.info("Deleting provider-backed collection item {}/{} by {}", key, normalizedSlug, LogMasks.principal(deletedBy));
         provider.delete(normalizedSlug, version);
 
         return new ArchiveResultDto(key, normalizedSlug, version);
@@ -273,7 +274,7 @@ public class CmsCollectionManager implements CmsCollectionService {
     public CollectionItemDto restore(String collectionKey, String slug, String updatedBy) {
         var item = requireOwnItem(collectionKey, slug);
 
-        logger.info("Restoring collection item {}/{} by {}", item.getCollectionKey(), item.getSlug(), updatedBy);
+        logger.info("Restoring collection item {}/{} by {}", item.getCollectionKey(), item.getSlug(), LogMasks.principal(updatedBy));
 
         if (item.isArchived()) {
             item.setArchived(false);
@@ -297,7 +298,7 @@ public class CmsCollectionManager implements CmsCollectionService {
         }
 
         purgeItem(item);
-        logger.info("Purged archived collection item {}/{} by {}", key, normalizedSlug, purgedBy);
+        logger.info("Purged archived collection item {}/{} by {}", key, normalizedSlug, LogMasks.principal(purgedBy));
     }
 
     @Override
@@ -308,7 +309,7 @@ public class CmsCollectionManager implements CmsCollectionService {
         var archived = collectionItemDao.findByCollectionKeyAndArchivedTrue(key);
         archived.forEach(this::purgeItem);
 
-        logger.info("Purged {} archived item(s) of collection {} by {}", archived.size(), key, purgedBy);
+        logger.info("Purged {} archived item(s) of collection {} by {}", archived.size(), key, LogMasks.principal(purgedBy));
         return new PurgeResultDto(archived.size());
     }
 
@@ -491,7 +492,7 @@ public class CmsCollectionManager implements CmsCollectionService {
         var key = def.key();
         var normalizedSlug = SlugNormalizer.normalizeBlockPath(slug);
 
-        logger.info("Upserting collection item {}/{} by {}", key, normalizedSlug, updatedBy);
+        logger.info("Upserting collection item {}/{} by {}", key, normalizedSlug, LogMasks.principal(updatedBy));
 
         var validated = filePreviewEnricher.enrich(def.schema(),
                 CollectionSchemaValidator.validateAndStrip(def.schema(), request.getData()));
@@ -591,14 +592,14 @@ public class CmsCollectionManager implements CmsCollectionService {
             var providedDto = provider.create(validated, resolvedLocale);
             deleteDrafts(key, null, updatedBy, resolvedLocale, true);
             providedDto.setCanEdit(true);
-            logger.info("Created collection item {}/{} by {}", key, providedDto.getSlug(), updatedBy);
+            logger.info("Created collection item {}/{} by {}", key, providedDto.getSlug(), LogMasks.principal(updatedBy));
             return providedDto;
         }
 
         requireOpenTranslationSlot(key, translationGroup, resolvedLocale);
         var slug = resolveUniqueSlug(key, base);
 
-        logger.info("Creating collection item {}/{} by {}", key, slug, updatedBy);
+        logger.info("Creating collection item {}/{} by {}", key, slug, LogMasks.principal(updatedBy));
 
         var item = CollectionItem.builder()
                 .collectionKey(key)
@@ -832,7 +833,7 @@ public class CmsCollectionManager implements CmsCollectionService {
         collectionDraftDao.findByCollectionKeyAndSlug(key, previousSlug)
                 .forEach(draft -> draft.setSlug(target));
 
-        logger.info("Renamed collection item {}/{} to {} by {}", key, previousSlug, target, updatedBy);
+        logger.info("Renamed collection item {}/{} to {} by {}", key, previousSlug, target, LogMasks.principal(updatedBy));
 
         return editable(saved);
     }

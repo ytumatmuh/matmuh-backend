@@ -1,10 +1,12 @@
 package com.matmuh.matmuhsite.business.concretes;
 
+import com.matmuh.matmuhsite.core.exceptions.BusinessRuleException;
 import com.matmuh.matmuhsite.core.exceptions.FileEmptyException;
 import com.matmuh.matmuhsite.core.exceptions.FileSizeExceededException;
 import com.matmuh.matmuhsite.core.exceptions.UnsupportedFileTypeException;
 import com.matmuh.matmuhsite.core.helpers.StorageUrlResolver;
 import com.matmuh.matmuhsite.core.helpers.UploadValidator;
+import com.matmuh.matmuhsite.core.properties.StudentPortalProperties;
 import com.matmuh.matmuhsite.core.properties.UploadProperties;
 import com.matmuh.matmuhsite.core.utilities.preview.DocumentPreviewService;
 import com.matmuh.matmuhsite.core.utilities.storage.FolderType;
@@ -31,9 +33,10 @@ class CmsMediaManagerUploadLimitsTest {
 
     private final StorageService storageService = mock(StorageService.class);
     private final StorageUrlResolver urlResolver = mock(StorageUrlResolver.class);
+    private final StudentPortalProperties studentPortal = new StudentPortalProperties();
     private final CmsMediaManager manager = new CmsMediaManager(storageService, urlResolver,
             new UploadValidator(new UploadProperties()), mock(DocumentPreviewService.class),
-            mock(FileDao.class), mock(ImageDao.class));
+            mock(FileDao.class), mock(ImageDao.class), studentPortal);
 
     private static MockMultipartFile file(String name, int bytes) {
         return new MockMultipartFile("file", name, "application/octet-stream", new byte[bytes]);
@@ -68,6 +71,7 @@ class CmsMediaManagerUploadLimitsTest {
 
     @Test
     void publicAccessPicksTheAccessClass() {
+        studentPortal.setEnabled(true);
         when(storageService.uploadFile(any(), anyString(), any(), any())).thenReturn("public/x.pdf");
         when(urlResolver.urlFor("public/x.pdf")).thenReturn("https://cdn/x.pdf");
 
@@ -78,5 +82,23 @@ class CmsMediaManagerUploadLimitsTest {
 
         manager.upload(file("gizli.pdf", 10), false);
         verify(storageService).uploadFile(any(), eq("gizli.pdf"), any(), eq(FolderType.FILE));
+    }
+
+    // Öğrenci girişi kapalı sitede files/'ı ziyaretçi açamaz; giriş isteyen ek kovaya hiç yazılmaz.
+    @Test
+    void privateAttachmentIsRejectedWithoutTheStudentPortal() {
+        var exception = assertThrows(BusinessRuleException.class, () -> manager.upload(file("gizli.pdf", 10), false));
+
+        assertEquals("file.private.attachment.not.supported", exception.getMessage());
+        verify(storageService, never()).uploadFile(any(), anyString(), any(), any());
+    }
+
+    @Test
+    void publicAndImageUploadsStillWorkWithoutTheStudentPortal() {
+        manager.upload(file("form.pdf", 10), true);
+        verify(storageService).uploadFile(any(), eq("form.pdf"), any(), eq(FolderType.PUBLIC_FILE));
+
+        manager.upload(file("afis.png", 10), false);
+        verify(storageService).uploadFile(any(), eq("afis.png"), any(), eq(FolderType.IMAGE));
     }
 }

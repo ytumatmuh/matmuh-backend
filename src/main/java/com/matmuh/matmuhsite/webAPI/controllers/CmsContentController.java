@@ -137,7 +137,8 @@ public class CmsContentController {
     }
 
     @Operation(summary = "Medya yükle", description = "CMS görseli veya belge eki yükler. Görseller images/ (CDN) altına gider. Belgeler publicAccess=true ise "
-                    + "giriş istemeyen public/ altına, false ise giriş isteyen files/ altına yazılır. Ofis belgelerinde PDF önizlemesi "
+                    + "giriş istemeyen public/ altına, false ise giriş isteyen files/ altına yazılır; öğrenci girişi kapalı sitede "
+                    + "false 400 döner. Ofis belgelerinde PDF önizlemesi "
                     + "üretilirse yanıt {data:{url, previewUrl}} taşır (ADMIN/EDITOR).")
     @PostMapping("/media")
     public UploadResponseDto upload(@RequestParam("file") MultipartFile file,

@@ -3,6 +3,7 @@ package com.matmuh.matmuhsite.business.concretes;
 import com.matmuh.matmuhsite.business.abstracts.SecurityService;
 import com.matmuh.matmuhsite.business.constants.UserMessages;
 import com.matmuh.matmuhsite.core.exceptions.ResourceNotFoundException;
+import com.matmuh.matmuhsite.core.helpers.LogMasks;
 import com.matmuh.matmuhsite.dataAccess.abstracts.UserDao;
 import com.matmuh.matmuhsite.entities.User;
 import org.slf4j.Logger;
@@ -53,7 +54,7 @@ public class SecurityManager implements SecurityService {
         }
 
         return userDao.findByEmail(authentication.getName()).orElseThrow(() -> {
-            logger.warn("Authenticated principal could not be resolved to a user: {}", authentication.getName());
+            logger.warn("Authenticated principal could not be resolved to a user: {}", LogMasks.principal(authentication.getName()));
             return new ResourceNotFoundException(UserMessages.USER_NOT_AUTHENTICATED);
         });
     }
